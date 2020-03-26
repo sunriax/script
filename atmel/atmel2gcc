@@ -1,0 +1,77 @@
+#!/bin/bash
+
+if ! type "avr-gcc" > /dev/null;
+then
+
+    echo "AVR Compiler not found"
+    exit 1
+
+fi
+
+DIRECTORY="$1/"
+TYPE=$2
+VERSION=$(avr-gcc --version | grep ^avr-gcc | sed 's/^.* //g')
+
+for d in */ ; do
+  cd $d
+
+  SOLUTION=`ls -1 *.atsln 2> /dev/null | wc -l`
+
+  if [ $SOLUTION == 1 ]
+  then
+  
+      for p in */ ; do
+      
+        cd $p
+
+            PROJECT=`ls -1 *.cproj 2> /dev/null | wc -l`
+            
+            if [ $PROJECT == 1 ]
+            then
+
+                if [ -d "${TYPE}" ]
+                then
+
+                    cd $TYPE
+                    
+                    if [ -f "Makefile" ]
+                    then
+    
+                        sed -i 's/cmd.exe/sh/g' ${PWD}/Makefile
+                        sed -i "s/4.9.2/${VERSION}/g" ${PWD}/Makefile
+                        sed -i 's/C:\\Program Files (x86)\\Atmel\\Studio\\7.0\\toolchain\\avr8\\avr8-gnu-toolchain\\bin\\avr-/\/usr\/bin\/avr-/g' ${PWD}/Makefile
+                        sed -i 's/.exe//g' ${PWD}/Makefile
+                        
+                        mkdir src
+                            
+                        make 1>/dev/null
+                        
+                        if [ $? -eq 0 ]; then
+                        
+                            echo "Project ${PWD} done"
+                            
+                        else
+                        
+                            echo "Project ${PWD} fail"
+                            exit 1
+                        fi
+                        
+    
+                    else
+                    
+                        echo "Makefile not found"
+						exit 1
+                        
+                    fi
+                fi
+            fi
+
+            cd $DIRECTORY$d
+    done
+  fi
+
+cd $DIRECTORY
+
+done
+
+exit 0
